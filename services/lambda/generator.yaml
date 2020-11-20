@@ -1,0 +1,18 @@
+# lambda/generator.yaml
+resources:
+  Function:
+    exceptions:
+      codes:
+        404: ResourceNotFoundException
+    list_operation:
+      match_fields:
+        - FunctionName
+    compare:
+      ignore:
+        - 'Spec.Code.S3Bucket'
+        - 'Spec.Code.S3Key'
+  EventSourceMapping:
+    compare:
+      ignore:
+        - 'Status.LastModified'
+        - 'Spec.MaximumBatchingWindowInSeconds'

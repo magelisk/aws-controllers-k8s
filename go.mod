@@ -3,6 +3,7 @@ module github.com/aws/aws-controllers-k8s
 go 1.14
 
 require (
+	github.com/aws/aws-lambda-go v1.20.0 // indirect
 	github.com/aws/aws-sdk-go v1.34.32
 	github.com/dlclark/regexp2 v1.2.0
 	// pin to v0.1.1 due to release problem with v0.1.2
@@ -16,7 +17,7 @@ require (
 	github.com/prometheus/client_golang v1.0.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.10.0
 	golang.org/x/mod v0.2.0
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
