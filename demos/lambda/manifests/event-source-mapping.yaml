@@ -1,0 +1,9 @@
+apiVersion: lambda.services.k8s.aws/v1alpha1
+kind: EventSourceMapping
+metadata:
+  name: test
+  namespace: default
+spec:
+  functionName: test-ack-lambda-function
+  eventSourceARN: arn:aws:sqs:eu-west-2:771174509839:testq
+  batchSize: 10
