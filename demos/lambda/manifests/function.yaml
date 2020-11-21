@@ -13,5 +13,5 @@ spec:
       key1: ack-service-controller
   functionName: test-ack-lambda-function
   handler: lambda
-  role: arn:aws:iam::771174509839:role/lambda-no-permissions 
+  role: arn:aws:iam::771174509839:role/ack-lambda-test-role-2
   runtime: go1.x

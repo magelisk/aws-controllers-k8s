@@ -18,6 +18,8 @@ package function
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+
 	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
 	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
 	ackerr "github.com/aws/aws-controllers-k8s/pkg/errors"
@@ -56,11 +58,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	resp, respErr := rm.sdkapi.GetFunctionWithContext(ctx, input)
+	rm.metrics.RecordAPICall("READ_ONE", "GetFunction", respErr)
 	if respErr != nil {
 		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "ResourceNotFoundException" {
 			return nil, ackerr.NotFound
 		}
-		return nil, err
+		return nil, respErr
 	}
 
 	// Merge in the information we read from the API call above to the copy of
@@ -109,16 +112,6 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	return res, nil
 }
 
-// newListRequestPayload returns SDK-specific struct for the HTTP request
-// payload of the List API call for the resource
-func (rm *resourceManager) newListRequestPayload(
-	r *resource,
-) (*svcsdk.ListFunctionsInput, error) {
-	res := &svcsdk.ListFunctionsInput{}
-
-	return res, nil
-}
-
 // sdkCreate creates the supplied resource in the backend AWS service API and
 // returns a new resource with any fields in the Status field filled in
 func (rm *resourceManager) sdkCreate(
@@ -131,6 +124,7 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	resp, respErr := rm.sdkapi.CreateFunctionWithContext(ctx, input)
+	rm.metrics.RecordAPICall("CREATE", "CreateFunction", respErr)
 	if respErr != nil {
 		return nil, respErr
 	}
@@ -343,6 +337,7 @@ func (rm *resourceManager) sdkDelete(
 		return err
 	}
 	_, respErr := rm.sdkapi.DeleteFunctionWithContext(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "DeleteFunction", respErr)
 	return respErr
 }
 
@@ -373,4 +368,51 @@ func (rm *resourceManager) setStatusDefaults(
 	if ko.Status.Conditions == nil {
 		ko.Status.Conditions = []*ackv1alpha1.Condition{}
 	}
+}
+
+// updateConditions returns updated resource, true; if conditions were updated
+// else it returns nil, false
+func (rm *resourceManager) updateConditions(
+	r *resource,
+	err error,
+) (*resource, bool) {
+	ko := r.ko.DeepCopy()
+	rm.setStatusDefaults(ko)
+
+	// Terminal condition
+	var terminalCondition *ackv1alpha1.Condition = nil
+	for _, condition := range ko.Status.Conditions {
+		if condition.Type == ackv1alpha1.ConditionTypeTerminal {
+			terminalCondition = condition
+			break
+		}
+	}
+
+	if rm.terminalAWSError(err) {
+		if terminalCondition == nil {
+			terminalCondition = &ackv1alpha1.Condition{
+				Type: ackv1alpha1.ConditionTypeTerminal,
+			}
+			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
+		}
+		terminalCondition.Status = corev1.ConditionTrue
+		awsErr, _ := ackerr.AWSError(err)
+		errorMessage := awsErr.Message()
+		terminalCondition.Message = &errorMessage
+	} else if terminalCondition != nil {
+		terminalCondition.Status = corev1.ConditionFalse
+		terminalCondition.Message = nil
+	}
+	if terminalCondition != nil {
+		return &resource{ko}, true // updated
+	}
+	return nil, false // not updated
+}
+
+// terminalAWSError returns awserr, true; if the supplied error is an aws Error type
+// and if the exception indicates that it is a Terminal exception
+// 'Terminal' exception are specified in generator configuration
+func (rm *resourceManager) terminalAWSError(err error) bool {
+	// No terminal_errors specified for this resource in generator config
+	return false
 }

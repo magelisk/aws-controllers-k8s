@@ -1,3 +1,4 @@
+# lambda/generator.yaml
 resources:
   Function:
     exceptions:
@@ -6,10 +7,12 @@ resources:
     list_operation:
       match_fields:
         - FunctionName
-    update_operation:
-      custom_method_name: customUpdateFunction
-operations:
-  GetFunction:
-    status_fields:
-      from: Code.Location
-      to: Location
+    compare:
+      ignore:
+        - 'Spec.Code.S3Bucket'
+        - 'Spec.Code.S3Key'
+  EventSourceMapping:
+    compare:
+      ignore:
+        - 'Status.LastModified'
+        - 'Spec.MaximumBatchingWindowInSeconds'

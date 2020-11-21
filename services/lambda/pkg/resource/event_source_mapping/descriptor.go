@@ -75,8 +75,17 @@ func (d *resourceDescriptor) Equal(
 ) bool {
 	ac := a.(*resource)
 	bc := b.(*resource)
+<<<<<<< HEAD
 	opts := cmpopts.EquateEmpty()
 	return cmp.Equal(ac.ko, bc.ko, opts)
+=======
+	opts := []cmp.Option{cmpopts.EquateEmpty()}
+	opts = append(opts, cmpopts.IgnoreFields(*ac.ko,
+		"Status.LastModified",
+		"Spec.MaximumBatchingWindowInSeconds",
+	))
+	return cmp.Equal(ac.ko, bc.ko, opts...)
+>>>>>>> ahilaly/lambda-wip
 }
 
 // Diff returns a Reporter which provides the difference between two supplied
@@ -90,7 +99,19 @@ func (d *resourceDescriptor) Diff(
 	ac := a.(*resource)
 	bc := b.(*resource)
 	var diffReporter ackcompare.Reporter
+<<<<<<< HEAD
 	cmp.Equal(ac.ko, bc.ko, cmp.Reporter(&diffReporter), cmp.AllowUnexported(svcapitypes.EventSourceMapping{}))
+=======
+	opts := []cmp.Option{
+		cmp.Reporter(&diffReporter),
+		cmp.AllowUnexported(svcapitypes.EventSourceMapping{}),
+	}
+	opts = append(opts, cmpopts.IgnoreFields(*ac.ko,
+		"Status.LastModified",
+		"Spec.MaximumBatchingWindowInSeconds",
+	))
+	cmp.Equal(ac.ko, bc.ko, opts...)
+>>>>>>> ahilaly/lambda-wip
 	return &diffReporter
 }
 

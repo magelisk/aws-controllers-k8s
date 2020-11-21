@@ -75,8 +75,12 @@ func (d *resourceDescriptor) Equal(
 ) bool {
 	ac := a.(*resource)
 	bc := b.(*resource)
-	opts := cmpopts.EquateEmpty()
-	return cmp.Equal(ac.ko, bc.ko, opts)
+	opts := []cmp.Option{cmpopts.EquateEmpty()}
+	opts = append(opts, cmpopts.IgnoreFields(*ac.ko,
+		"Spec.Code.S3Bucket",
+		"Spec.Code.S3Key",
+	))
+	return cmp.Equal(ac.ko, bc.ko, opts...)
 }
 
 // Diff returns a Reporter which provides the difference between two supplied
@@ -90,7 +94,15 @@ func (d *resourceDescriptor) Diff(
 	ac := a.(*resource)
 	bc := b.(*resource)
 	var diffReporter ackcompare.Reporter
-	cmp.Equal(ac.ko, bc.ko, cmp.Reporter(&diffReporter), cmp.AllowUnexported(svcapitypes.Function{}))
+	opts := []cmp.Option{
+		cmp.Reporter(&diffReporter),
+		cmp.AllowUnexported(svcapitypes.Function{}),
+	}
+	opts = append(opts, cmpopts.IgnoreFields(*ac.ko,
+		"Spec.Code.S3Bucket",
+		"Spec.Code.S3Key",
+	))
+	cmp.Equal(ac.ko, bc.ko, opts...)
 	return &diffReporter
 }
 

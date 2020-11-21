@@ -18,6 +18,11 @@ package alias
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
+=======
+	ackerr "github.com/aws/aws-controllers-k8s/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+>>>>>>> ahilaly/lambda-wip
 
 	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
 	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
@@ -85,7 +90,11 @@ func (rm *resourceManager) ReadOne(
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 	return observed, nil
+=======
+	return rm.onSuccess(observed)
+>>>>>>> ahilaly/lambda-wip
 }
 
 // Create attempts to create the supplied AWSResource in the backend AWS
@@ -102,9 +111,15 @@ func (rm *resourceManager) Create(
 	}
 	created, err := rm.sdkCreate(ctx, r)
 	if err != nil {
+<<<<<<< HEAD
 		return nil, err
 	}
 	return created, nil
+=======
+		return rm.onError(r, err)
+	}
+	return rm.onSuccess(created)
+>>>>>>> ahilaly/lambda-wip
 }
 
 // Update attempts to mutate the supplied desired AWSResource in the backend AWS
@@ -129,9 +144,15 @@ func (rm *resourceManager) Update(
 	}
 	updated, err := rm.sdkUpdate(ctx, desired, latest, diffReporter)
 	if err != nil {
+<<<<<<< HEAD
 		return nil, err
 	}
 	return updated, nil
+=======
+		return rm.onError(latest, err)
+	}
+	return rm.onSuccess(updated)
+>>>>>>> ahilaly/lambda-wip
 }
 
 // Delete attempts to destroy the supplied AWSResource in the backend AWS
@@ -181,3 +202,39 @@ func newResourceManager(
 		sdkapi:       svcsdk.New(sess),
 	}, nil
 }
+<<<<<<< HEAD
+=======
+
+// onError updates resource conditions and returns updated resource
+// it returns nil if no condition is updated.
+func (rm *resourceManager) onError(
+	r *resource,
+	err error,
+) (acktypes.AWSResource, error) {
+	r1, updated := rm.updateConditions(r, err)
+	if !updated {
+		return nil, err
+	}
+	for _, condition := range r1.Conditions() {
+		if condition.Type == ackv1alpha1.ConditionTypeTerminal &&
+			condition.Status == corev1.ConditionTrue {
+			// resource is in Terminal condition
+			// return Terminal error
+			return r1, ackerr.Terminal
+		}
+	}
+	return r1, err
+}
+
+// onSuccess updates resource conditions and returns updated resource
+// it returns the supplied resource if no condition is updated.
+func (rm *resourceManager) onSuccess(
+	r *resource,
+) (acktypes.AWSResource, error) {
+	r1, updated := rm.updateConditions(r, nil)
+	if !updated {
+		return r, nil
+	}
+	return r1, nil
+}
+>>>>>>> ahilaly/lambda-wip
