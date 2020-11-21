@@ -36,11 +36,42 @@ s3_bucket_exists() {
         __profile_args=" --profile $__profile"
     fi
 
-    jq_expr='.Buckets[] | select(.Name | contains($BUCKET_NAME))'
+    jq_expr='.Buckets[] | select(.Name | contains("$BUCKET_NAME"))'
     daws s3api list-buckets $__region_args $__profile_args --output json | jq -e --arg BUCKET_NAME "$bucket_name" "$jq_expr"
     if [[ $? -eq 4 ]]; then
         return 1
     else
         return 0
     fi
+}
+
+# create s3 bucket
+s3_create_bucket() {
+    __bucket_name="$1"
+    __region_args=""
+    __region="$2"
+    if [[ -n "$__region" ]]; then
+        __region_args=" --region $__region"
+    fi
+    __profile_args=""
+    __profile="$3"
+    if [[ -n "$__profile" ]]; then
+        __profile_args=" --profile $__profile"
+    fi
+
+    daws s3api create-bucket --bucket $__bucket_name \
+        --create-bucket-configuration LocationConstraint=$__region \
+        --region $__region --output json > /dev/null
+}
+
+# delete s3 bucket
+s3_delete_bucket() {
+    __bucket_name="$1"
+    __profile_args=""
+    __profile="$2"
+    if [[ -n "$__profile" ]]; then
+        __profile_args=" --profile $__profile"
+    fi
+
+    daws s3api create-bucket --bucket $__bucket_name $__profile_args --output json > /dev/null
 }

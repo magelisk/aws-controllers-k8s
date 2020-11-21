@@ -2,8 +2,9 @@ package compare
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
 	"strings"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type DiffItem struct {
@@ -11,7 +12,7 @@ type DiffItem struct {
 }
 
 func (diff *DiffItem) String() string {
-	return fmt.Sprintf("%#v\n", diff.Path)
+	return fmt.Sprintf("%v", diff.Path)
 }
 
 type Reporter struct {
@@ -38,5 +39,5 @@ func (reporter *Reporter) String() string {
 	for _, diff := range reporter.Differences {
 		diffs = append(diffs, diff.String())
 	}
-	return strings.Join(diffs, "\n")
+	return strings.Join(diffs, "-")
 }
